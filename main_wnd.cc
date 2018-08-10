@@ -30,104 +30,105 @@ namespace {
 // GtkMainWnd instance.
 //
 
-gboolean OnDestroyedCallback(GtkWidget* widget,
-                             GdkEvent* event,
-                             gpointer data) {
-  reinterpret_cast<GtkMainWnd*>(data)->OnDestroyed(widget, event);
-  return FALSE;
-}
+  gboolean OnDestroyedCallback(GtkWidget *widget,
+                               GdkEvent *event,
+                               gpointer data) {
+    reinterpret_cast<GtkMainWnd *>(data)->OnDestroyed(widget, event);
+    return FALSE;
+  }
 
-void OnClickedCallback(GtkWidget* widget, gpointer data) {
-  reinterpret_cast<GtkMainWnd*>(data)->OnClicked(widget);
-}
+  void OnClickedCallback(GtkWidget *widget, gpointer data) {
+    reinterpret_cast<GtkMainWnd *>(data)->OnClicked(widget);
+  }
 
-gboolean SimulateButtonClick(gpointer button) {
-  g_signal_emit_by_name(button, "clicked");
-  return false;
-}
+  gboolean SimulateButtonClick(gpointer button) {
+    g_signal_emit_by_name(button, "clicked");
+    return false;
+  }
 
-gboolean OnKeyPressCallback(GtkWidget* widget,
-                            GdkEventKey* key,
-                            gpointer data) {
-  reinterpret_cast<GtkMainWnd*>(data)->OnKeyPress(widget, key);
-  return false;
-}
+  gboolean OnKeyPressCallback(GtkWidget *widget,
+                              GdkEventKey *key,
+                              gpointer data) {
+    reinterpret_cast<GtkMainWnd *>(data)->OnKeyPress(widget, key);
+    return false;
+  }
 
-void OnRowActivatedCallback(GtkTreeView* tree_view,
-                            GtkTreePath* path,
-                            GtkTreeViewColumn* column,
-                            gpointer data) {
-  reinterpret_cast<GtkMainWnd*>(data)->OnRowActivated(tree_view, path, column);
-}
+  void OnRowActivatedCallback(GtkTreeView *tree_view,
+                              GtkTreePath *path,
+                              GtkTreeViewColumn *column,
+                              gpointer data) {
+    reinterpret_cast<GtkMainWnd *>(data)->OnRowActivated(tree_view, path, column);
+  }
 
-gboolean SimulateLastRowActivated(gpointer data) {
-  GtkTreeView* tree_view = reinterpret_cast<GtkTreeView*>(data);
-  GtkTreeModel* model = gtk_tree_view_get_model(tree_view);
+  gboolean SimulateLastRowActivated(gpointer data) {
+    GtkTreeView *tree_view = reinterpret_cast<GtkTreeView *>(data);
+    GtkTreeModel *model = gtk_tree_view_get_model(tree_view);
 
-  // "if iter is NULL, then the number of toplevel nodes is returned."
-  int rows = gtk_tree_model_iter_n_children(model, NULL);
-  GtkTreePath* lastpath = gtk_tree_path_new_from_indices(rows - 1, -1);
+    // "if iter is NULL, then the number of toplevel nodes is returned."
+    int rows = gtk_tree_model_iter_n_children(model, NULL);
+    GtkTreePath *lastpath = gtk_tree_path_new_from_indices(rows - 1, -1);
 
-  // Select the last item in the list
-  GtkTreeSelection* selection = gtk_tree_view_get_selection(tree_view);
-  gtk_tree_selection_select_path(selection, lastpath);
+    // Select the last item in the list
+    GtkTreeSelection *selection = gtk_tree_view_get_selection(tree_view);
+    gtk_tree_selection_select_path(selection, lastpath);
 
-  // Our TreeView only has one column, so it is column 0.
-  GtkTreeViewColumn* column = gtk_tree_view_get_column(tree_view, 0);
+    // Our TreeView only has one column, so it is column 0.
+    GtkTreeViewColumn *column = gtk_tree_view_get_column(tree_view, 0);
 
-  gtk_tree_view_row_activated(tree_view, lastpath, column);
+    gtk_tree_view_row_activated(tree_view, lastpath, column);
 
-  gtk_tree_path_free(lastpath);
-  return false;
-}
+    gtk_tree_path_free(lastpath);
+    return false;
+  }
 
 // Creates a tree view, that we use to display the list of peers.
-void InitializeList(GtkWidget* list) {
-  GtkCellRenderer* renderer = gtk_cell_renderer_text_new();
-  GtkTreeViewColumn* column = gtk_tree_view_column_new_with_attributes(
-      "List Items", renderer, "text", 0, NULL);
-  gtk_tree_view_append_column(GTK_TREE_VIEW(list), column);
-  GtkListStore* store = gtk_list_store_new(2, G_TYPE_STRING, G_TYPE_INT);
-  gtk_tree_view_set_model(GTK_TREE_VIEW(list), GTK_TREE_MODEL(store));
-  g_object_unref(store);
-}
+  void InitializeList(GtkWidget *list) {
+    GtkCellRenderer *renderer = gtk_cell_renderer_text_new();
+    GtkTreeViewColumn *column = gtk_tree_view_column_new_with_attributes(
+        "List Items", renderer, "text", 0, NULL);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(list), column);
+    GtkListStore *store = gtk_list_store_new(2, G_TYPE_STRING, G_TYPE_INT);
+    gtk_tree_view_set_model(GTK_TREE_VIEW(list), GTK_TREE_MODEL(store));
+    g_object_unref(store);
+  }
 
 // Adds an entry to a tree view.
-void AddToList(GtkWidget* list, const gchar* str, int value) {
-  GtkListStore* store =
-      GTK_LIST_STORE(gtk_tree_view_get_model(GTK_TREE_VIEW(list)));
+  void AddToList(GtkWidget *list, const gchar *str, int value) {
+    GtkListStore *store =
+        GTK_LIST_STORE(gtk_tree_view_get_model(GTK_TREE_VIEW(list)));
 
-  GtkTreeIter iter;
-  gtk_list_store_append(store, &iter);
-  gtk_list_store_set(store, &iter, 0, str, 1, value, -1);
-}
+    GtkTreeIter iter;
+    gtk_list_store_append(store, &iter);
+    gtk_list_store_set(store, &iter, 0, str, 1, value, -1);
+  }
 
-struct UIThreadCallbackData {
-  explicit UIThreadCallbackData(MainWndCallback* cb, int id, void* d)
-      : callback(cb), msg_id(id), data(d) {}
-  MainWndCallback* callback;
-  int msg_id;
-  void* data;
-};
+  struct UIThreadCallbackData {
+    explicit UIThreadCallbackData(MainWndCallback *cb, int id, void *d)
+        : callback(cb), msg_id(id), data(d) {}
 
-gboolean HandleUIThreadCallback(gpointer data) {
-  UIThreadCallbackData* cb_data = reinterpret_cast<UIThreadCallbackData*>(data);
-  cb_data->callback->UIThreadCallback(cb_data->msg_id, cb_data->data);
-  delete cb_data;
-  return false;
-}
+    MainWndCallback *callback;
+    int msg_id;
+    void *data;
+  };
 
-gboolean Redraw(gpointer data) {
-  GtkMainWnd* wnd = reinterpret_cast<GtkMainWnd*>(data);
-  wnd->OnRedraw();
-  return false;
-}
+  gboolean HandleUIThreadCallback(gpointer data) {
+    UIThreadCallbackData *cb_data = reinterpret_cast<UIThreadCallbackData *>(data);
+    cb_data->callback->UIThreadCallback(cb_data->msg_id, cb_data->data);
+    delete cb_data;
+    return false;
+  }
 
-gboolean Draw(GtkWidget* widget, cairo_t* cr, gpointer data) {
-  GtkMainWnd* wnd = reinterpret_cast<GtkMainWnd*>(data);
-  wnd->Draw(widget, cr);
-  return false;
-}
+  gboolean Redraw(gpointer data) {
+    GtkMainWnd *wnd = reinterpret_cast<GtkMainWnd *>(data);
+    wnd->OnRedraw();
+    return false;
+  }
+
+  gboolean Draw(GtkWidget *widget, cairo_t *cr, gpointer data) {
+    GtkMainWnd *wnd = reinterpret_cast<GtkMainWnd *>(data);
+    wnd->Draw(widget, cr);
+    return false;
+  }
 
 }  // namespace
 
@@ -135,7 +136,7 @@ gboolean Draw(GtkWidget* widget, cairo_t* cr, gpointer data) {
 // GtkMainWnd implementation.
 //
 
-GtkMainWnd::GtkMainWnd(const char* server,
+GtkMainWnd::GtkMainWnd(const char *server,
                        int port,
                        bool autoconnect,
                        bool autocall)
@@ -158,7 +159,7 @@ GtkMainWnd::~GtkMainWnd() {
   RTC_DCHECK(!IsWindow());
 }
 
-void GtkMainWnd::RegisterObserver(MainWndCallback* callback) {
+void GtkMainWnd::RegisterObserver(MainWndCallback *callback) {
   callback_ = callback;
 }
 
@@ -166,10 +167,10 @@ bool GtkMainWnd::IsWindow() {
   return window_ != NULL && GTK_IS_WINDOW(window_);
 }
 
-void GtkMainWnd::MessageBox(const char* caption,
-                            const char* text,
+void GtkMainWnd::MessageBox(const char *caption,
+                            const char *text,
                             bool is_error) {
-  GtkWidget* dialog = gtk_message_dialog_new(
+  GtkWidget *dialog = gtk_message_dialog_new(
       GTK_WINDOW(window_), GTK_DIALOG_DESTROY_WITH_PARENT,
       is_error ? GTK_MESSAGE_ERROR : GTK_MESSAGE_INFO, GTK_BUTTONS_CLOSE, "%s",
       text);
@@ -188,7 +189,7 @@ MainWindow::UI GtkMainWnd::current_ui() {
   return STREAMING;
 }
 
-void GtkMainWnd::StartLocalRenderer(webrtc::VideoTrackInterface* local_video) {
+void GtkMainWnd::StartLocalRenderer(webrtc::VideoTrackInterface *local_video) {
   local_renderer_.reset(new VideoRenderer(this, local_video));
 }
 
@@ -197,7 +198,7 @@ void GtkMainWnd::StopLocalRenderer() {
 }
 
 void GtkMainWnd::StartRemoteRenderer(
-    webrtc::VideoTrackInterface* remote_video) {
+    webrtc::VideoTrackInterface *remote_video) {
   remote_renderer_.reset(new VideoRenderer(this, remote_video));
 }
 
@@ -205,7 +206,7 @@ void GtkMainWnd::StopRemoteRenderer() {
   remote_renderer_.reset();
 }
 
-void GtkMainWnd::QueueUIThreadCallback(int msg_id, void* data) {
+void GtkMainWnd::QueueUIThreadCallback(int msg_id, void *data) {
   g_idle_add(HandleUIThreadCallback,
              new UIThreadCallbackData(callback_, msg_id, data));
 }
@@ -257,17 +258,17 @@ void GtkMainWnd::SwitchToConnectUI() {
 #else
   vbox_ = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
 #endif
-  GtkWidget* valign = gtk_alignment_new(0, 1, 0, 0);
+  GtkWidget *valign = gtk_alignment_new(0, 1, 0, 0);
   gtk_container_add(GTK_CONTAINER(vbox_), valign);
   gtk_container_add(GTK_CONTAINER(window_), vbox_);
 
 #if GTK_MAJOR_VERSION == 2
   GtkWidget* hbox = gtk_hbox_new(FALSE, 5);
 #else
-  GtkWidget* hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
+  GtkWidget *hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
 #endif
 
-  GtkWidget* label = gtk_label_new("Server");
+  GtkWidget *label = gtk_label_new("Server");
   gtk_container_add(GTK_CONTAINER(hbox), label);
 
   server_edit_ = gtk_entry_new();
@@ -280,12 +281,12 @@ void GtkMainWnd::SwitchToConnectUI() {
   gtk_widget_set_size_request(port_edit_, 70, 30);
   gtk_container_add(GTK_CONTAINER(hbox), port_edit_);
 
-  GtkWidget* button = gtk_button_new_with_label("Connect");
+  GtkWidget *button = gtk_button_new_with_label("Connect");
   gtk_widget_set_size_request(button, 70, 30);
   g_signal_connect(button, "clicked", G_CALLBACK(OnClickedCallback), this);
   gtk_container_add(GTK_CONTAINER(hbox), button);
 
-  GtkWidget* halign = gtk_alignment_new(1, 0, 0, 0);
+  GtkWidget *halign = gtk_alignment_new(1, 0, 0, 0);
   gtk_container_add(GTK_CONTAINER(halign), hbox);
   gtk_box_pack_start(GTK_BOX(vbox_), halign, FALSE, FALSE, 0);
 
@@ -295,7 +296,7 @@ void GtkMainWnd::SwitchToConnectUI() {
     g_idle_add(SimulateButtonClick, button);
 }
 
-void GtkMainWnd::SwitchToPeerList(const Peers& peers) {
+void GtkMainWnd::SwitchToPeerList(const Peers &peers) {
   RTC_LOG(INFO) << __FUNCTION__;
 
   if (!peer_list_) {
@@ -319,7 +320,7 @@ void GtkMainWnd::SwitchToPeerList(const Peers& peers) {
     gtk_container_add(GTK_CONTAINER(window_), peer_list_);
     gtk_widget_show_all(window_);
   } else {
-    GtkListStore* store =
+    GtkListStore *store =
         GTK_LIST_STORE(gtk_tree_view_get_model(GTK_TREE_VIEW(peer_list_)));
     gtk_list_store_clear(store);
   }
@@ -350,7 +351,7 @@ void GtkMainWnd::SwitchToStreamingUI() {
   gtk_widget_show_all(window_);
 }
 
-void GtkMainWnd::OnDestroyed(GtkWidget* widget, GdkEvent* event) {
+void GtkMainWnd::OnDestroyed(GtkWidget *widget, GdkEvent *event) {
   callback_->Close();
   window_ = NULL;
   draw_area_ = NULL;
@@ -360,7 +361,7 @@ void GtkMainWnd::OnDestroyed(GtkWidget* widget, GdkEvent* event) {
   peer_list_ = NULL;
 }
 
-void GtkMainWnd::OnClicked(GtkWidget* widget) {
+void GtkMainWnd::OnClicked(GtkWidget *widget) {
   // Make the connect button insensitive, so that it cannot be clicked more than
   // once.  Now that the connection includes auto-retry, it should not be
   // necessary to click it more than once.
@@ -371,7 +372,7 @@ void GtkMainWnd::OnClicked(GtkWidget* widget) {
   callback_->StartLogin(server_, port);
 }
 
-void GtkMainWnd::OnKeyPress(GtkWidget* widget, GdkEventKey* key) {
+void GtkMainWnd::OnKeyPress(GtkWidget *widget, GdkEventKey *key) {
   if (key->type == GDK_KEY_PRESS) {
     switch (key->keyval) {
 #if GTK_MAJOR_VERSION == 2
@@ -407,16 +408,16 @@ void GtkMainWnd::OnKeyPress(GtkWidget* widget, GdkEventKey* key) {
   }
 }
 
-void GtkMainWnd::OnRowActivated(GtkTreeView* tree_view,
-                                GtkTreePath* path,
-                                GtkTreeViewColumn* column) {
+void GtkMainWnd::OnRowActivated(GtkTreeView *tree_view,
+                                GtkTreePath *path,
+                                GtkTreeViewColumn *column) {
   RTC_DCHECK(peer_list_ != NULL);
   GtkTreeIter iter;
-  GtkTreeModel* model;
-  GtkTreeSelection* selection =
+  GtkTreeModel *model;
+  GtkTreeSelection *selection =
       gtk_tree_view_get_selection(GTK_TREE_VIEW(tree_view));
   if (gtk_tree_selection_get_selected(selection, &model, &iter)) {
-    char* text;
+    char *text;
     int id = -1;
     gtk_tree_model_get(model, &iter, 0, &text, 1, &id, -1);
     if (id != -1)
@@ -428,7 +429,7 @@ void GtkMainWnd::OnRowActivated(GtkTreeView* tree_view,
 void GtkMainWnd::OnRedraw() {
   gdk_threads_enter();
 
-  VideoRenderer* remote_renderer = remote_renderer_.get();
+  VideoRenderer *remote_renderer = remote_renderer_.get();
   if (remote_renderer && remote_renderer->image() != NULL &&
       draw_area_ != NULL) {
     width_ = remote_renderer->width();
@@ -440,16 +441,16 @@ void GtkMainWnd::OnRedraw() {
       gtk_widget_set_size_request(draw_area_, width_ * 2, height_ * 2);
     }
 
-    const uint32_t* image =
-        reinterpret_cast<const uint32_t*>(remote_renderer->image());
-    uint32_t* scaled = reinterpret_cast<uint32_t*>(draw_buffer_.get());
+    const uint32_t *image =
+        reinterpret_cast<const uint32_t *>(remote_renderer->image());
+    uint32_t *scaled = reinterpret_cast<uint32_t *>(draw_buffer_.get());
     for (int r = 0; r < height_; ++r) {
       for (int c = 0; c < width_; ++c) {
         int x = c * 2;
         scaled[x] = scaled[x + 1] = image[c];
       }
 
-      uint32_t* prev_line = scaled;
+      uint32_t *prev_line = scaled;
       scaled += width_ * 2;
       memcpy(scaled, prev_line, (width_ * 2) * 4);
 
@@ -457,10 +458,10 @@ void GtkMainWnd::OnRedraw() {
       scaled += width_ * 2;
     }
 
-    VideoRenderer* local_renderer = local_renderer_.get();
+    VideoRenderer *local_renderer = local_renderer_.get();
     if (local_renderer && local_renderer->image()) {
-      image = reinterpret_cast<const uint32_t*>(local_renderer->image());
-      scaled = reinterpret_cast<uint32_t*>(draw_buffer_.get());
+      image = reinterpret_cast<const uint32_t *>(local_renderer->image());
+      scaled = reinterpret_cast<uint32_t *>(draw_buffer_.get());
       // Position the local preview on the right side.
       scaled += (width_ * 2) - (local_renderer->width() / 2);
       // right margin...
@@ -491,10 +492,10 @@ void GtkMainWnd::OnRedraw() {
   gdk_threads_leave();
 }
 
-void GtkMainWnd::Draw(GtkWidget* widget, cairo_t* cr) {
+void GtkMainWnd::Draw(GtkWidget *widget, cairo_t *cr) {
 #if GTK_MAJOR_VERSION != 2
   cairo_format_t format = CAIRO_FORMAT_RGB24;
-  cairo_surface_t* surface = cairo_image_surface_create_for_data(
+  cairo_surface_t *surface = cairo_image_surface_create_for_data(
       draw_buffer_.get(), format, width_ * 2, height_ * 2,
       cairo_format_stride_for_width(format, width_ * 2));
   cairo_set_source_surface(cr, surface, 0, 0);
@@ -507,8 +508,8 @@ void GtkMainWnd::Draw(GtkWidget* widget, cairo_t* cr) {
 }
 
 GtkMainWnd::VideoRenderer::VideoRenderer(
-    GtkMainWnd* main_wnd,
-    webrtc::VideoTrackInterface* track_to_render)
+    GtkMainWnd *main_wnd,
+    webrtc::VideoTrackInterface *track_to_render)
     : width_(0),
       height_(0),
       main_wnd_(main_wnd),
@@ -533,7 +534,7 @@ void GtkMainWnd::VideoRenderer::SetSize(int width, int height) {
   gdk_threads_leave();
 }
 
-void GtkMainWnd::VideoRenderer::OnFrame(const webrtc::VideoFrame& video_frame) {
+void GtkMainWnd::VideoRenderer::OnFrame(const webrtc::VideoFrame &video_frame) {
   gdk_threads_enter();
 
   rtc::scoped_refptr<webrtc::I420BufferInterface> buffer(

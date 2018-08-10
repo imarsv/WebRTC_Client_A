@@ -16,7 +16,9 @@
 #ifdef WIN32
 #include <winsock2.h>
 #else
+
 #include <unistd.h>
+
 #endif
 
 #include "rtc_base/arraysize.h"
@@ -26,10 +28,10 @@ const char kVideoLabel[] = "video_label";
 const char kStreamId[] = "stream_id";
 const uint16_t kDefaultServerPort = 8888;
 
-std::string GetEnvVarOrDefault(const char* env_var_name,
-                               const char* default_value) {
+std::string GetEnvVarOrDefault(const char *env_var_name,
+                               const char *default_value) {
   std::string value;
-  const char* env_var = getenv(env_var_name);
+  const char *env_var = getenv(env_var_name);
   if (env_var)
     value = env_var;
 

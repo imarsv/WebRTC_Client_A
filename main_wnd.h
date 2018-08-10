@@ -30,23 +30,34 @@ typedef struct _cairo cairo_t;
 // This is functionally equivalent to the MainWnd class in the Windows
 // implementation.
 class GtkMainWnd : public MainWindow {
- public:
-  GtkMainWnd(const char* server, int port, bool autoconnect, bool autocall);
+public:
+  GtkMainWnd(const char *server, int port, bool autoconnect, bool autocall);
+
   ~GtkMainWnd();
 
-  virtual void RegisterObserver(MainWndCallback* callback);
+  virtual void RegisterObserver(MainWndCallback *callback);
+
   virtual bool IsWindow();
+
   virtual void SwitchToConnectUI();
-  virtual void SwitchToPeerList(const Peers& peers);
+
+  virtual void SwitchToPeerList(const Peers &peers);
+
   virtual void SwitchToStreamingUI();
-  virtual void MessageBox(const char* caption, const char* text, bool is_error);
+
+  virtual void MessageBox(const char *caption, const char *text, bool is_error);
+
   virtual MainWindow::UI current_ui();
-  virtual void StartLocalRenderer(webrtc::VideoTrackInterface* local_video);
+
+  virtual void StartLocalRenderer(webrtc::VideoTrackInterface *local_video);
+
   virtual void StopLocalRenderer();
-  virtual void StartRemoteRenderer(webrtc::VideoTrackInterface* remote_video);
+
+  virtual void StartRemoteRenderer(webrtc::VideoTrackInterface *remote_video);
+
   virtual void StopRemoteRenderer();
 
-  virtual void QueueUIThreadCallback(int msg_id, void* data);
+  virtual void QueueUIThreadCallback(int msg_id, void *data);
 
   // Creates and shows the main window with the |Connect UI| enabled.
   bool Create();
@@ -56,57 +67,59 @@ class GtkMainWnd : public MainWindow {
   bool Destroy();
 
   // Callback for when the main window is destroyed.
-  void OnDestroyed(GtkWidget* widget, GdkEvent* event);
+  void OnDestroyed(GtkWidget *widget, GdkEvent *event);
 
   // Callback for when the user clicks the "Connect" button.
-  void OnClicked(GtkWidget* widget);
+  void OnClicked(GtkWidget *widget);
 
   // Callback for keystrokes.  Used to capture Esc and Return.
-  void OnKeyPress(GtkWidget* widget, GdkEventKey* key);
+  void OnKeyPress(GtkWidget *widget, GdkEventKey *key);
 
   // Callback when the user double clicks a peer in order to initiate a
   // connection.
-  void OnRowActivated(GtkTreeView* tree_view,
-                      GtkTreePath* path,
-                      GtkTreeViewColumn* column);
+  void OnRowActivated(GtkTreeView *tree_view,
+                      GtkTreePath *path,
+                      GtkTreeViewColumn *column);
 
   void OnRedraw();
 
-  void Draw(GtkWidget* widget, cairo_t* cr);
+  void Draw(GtkWidget *widget, cairo_t *cr);
 
- protected:
+protected:
   class VideoRenderer : public rtc::VideoSinkInterface<webrtc::VideoFrame> {
-   public:
-    VideoRenderer(GtkMainWnd* main_wnd,
-                  webrtc::VideoTrackInterface* track_to_render);
+  public:
+    VideoRenderer(GtkMainWnd *main_wnd,
+                  webrtc::VideoTrackInterface *track_to_render);
+
     virtual ~VideoRenderer();
 
     // VideoSinkInterface implementation
-    void OnFrame(const webrtc::VideoFrame& frame) override;
+    void OnFrame(const webrtc::VideoFrame &frame) override;
 
-    const uint8_t* image() const { return image_.get(); }
+    const uint8_t *image() const { return image_.get(); }
 
     int width() const { return width_; }
 
     int height() const { return height_; }
 
-   protected:
+  protected:
     void SetSize(int width, int height);
+
     std::unique_ptr<uint8_t[]> image_;
     int width_;
     int height_;
-    GtkMainWnd* main_wnd_;
+    GtkMainWnd *main_wnd_;
     rtc::scoped_refptr<webrtc::VideoTrackInterface> rendered_track_;
   };
 
- protected:
-  GtkWidget* window_;     // Our main window.
-  GtkWidget* draw_area_;  // The drawing surface for rendering video streams.
-  GtkWidget* vbox_;       // Container for the Connect UI.
-  GtkWidget* server_edit_;
-  GtkWidget* port_edit_;
-  GtkWidget* peer_list_;  // The list of peers.
-  MainWndCallback* callback_;
+protected:
+  GtkWidget *window_;     // Our main window.
+  GtkWidget *draw_area_;  // The drawing surface for rendering video streams.
+  GtkWidget *vbox_;       // Container for the Connect UI.
+  GtkWidget *server_edit_;
+  GtkWidget *port_edit_;
+  GtkWidget *peer_list_;  // The list of peers.
+  MainWndCallback *callback_;
   std::string server_;
   std::string port_;
   bool autoconnect_;

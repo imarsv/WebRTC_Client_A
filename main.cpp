@@ -59,16 +59,6 @@ protected:
 };
 
 int main(int argc, char* argv[]) {
-    {
-        Json::StyledWriter writer;
-        Json::Value jmessage;
-        jmessage["a"] = "AAA";
-        jmessage["b"] = 111;
-
-        std::cout << "A: " << jmessage << std::endl;
-        std::cout << "B: " << writer.write(jmessage) << std::endl;
-    }
-
     gtk_init(&argc, &argv);
 
     rtc::FlagList::SetFlagsFromCommandLine(&argc, argv, true);

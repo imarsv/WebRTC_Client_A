@@ -20,6 +20,8 @@
 #include "rtc_base/ssladapter.h"
 #include "rtc_base/thread.h"
 
+#include "SignalingManager.h"
+
 class CustomSocketServer : public rtc::PhysicalSocketServer {
 public:
   explicit CustomSocketServer(GtkMainWnd *wnd)
@@ -81,6 +83,15 @@ int main(int argc, char *argv[]) {
 
   CustomSocketServer socket_server(&wnd);
   rtc::AutoSocketServerThread thread(&socket_server);
+
+//  {
+//    SignalingManager manager;
+//    manager.setURL("wss://localhost:4443/webrtc/xyz");
+//
+//    manager.run();
+//
+//    while(true){};
+//  }
 
   rtc::InitializeSSL();
   // Must be constructed after we set the socketserver.

@@ -71,7 +71,7 @@ private:
 
   std::string url;
 
-  PeerConnectionObserver *callback;
+  PeerConnectionObserver *callback = nullptr;
 
   mutable std::mutex outgoingMessagesMutex;
   std::queue<std::string> outgoingMessages;

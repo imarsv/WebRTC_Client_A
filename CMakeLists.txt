@@ -37,7 +37,7 @@ set(CMAKE_CXX_FLAGS "-Wno-deprecated-declarations -fno-strict-aliasing --param=s
 
 #
 # Mongoose
-add_definitions(-DMG_ENABLE_SSL -DMG_ENABLE_HTTP_WEBSOCKET)
+add_definitions(-DMG_ENABLE_SSL -DMG_ENABLE_HTTP_WEBSOCKET -DMG_WEBSOCKET_PING_INTERVAL_SECONDS=99999999)
 
 add_executable(client
         main.cpp

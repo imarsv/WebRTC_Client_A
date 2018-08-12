@@ -65,7 +65,7 @@ void SignalingManager::observerThreadPooling() {
       }
     }
 
-    if (message.empty()) {
+    if (message.empty() || (callback == nullptr)) {
       std::this_thread::sleep_for(10ms);
     } else {
       callback->OnMessage(message);
@@ -132,8 +132,6 @@ void SignalingManager::requestHandler(struct mg_connection *nc, int ev, void *ev
       std::cout << "MG_F_WEBSOCKET_NO_DEFRAG: " << ((wm->flags & MG_F_WEBSOCKET_NO_DEFRAG) > 0) << std::endl;
       std::cout << "MG_F_DELETE_CHUNK: " << ((wm->flags & MG_F_DELETE_CHUNK) > 0) << std::endl;
       std::cout << "MG_F_ENABLE_BROADCAST: " << ((wm->flags & MG_F_ENABLE_BROADCAST) > 0) << std::endl;
-
-//      mg_send_websocket_frame(nc, WEBSOCKET_OP_PONG, nullptr, 0);
     }
       break;
 

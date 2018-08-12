@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.12)
 project(WebRTC_client_1)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 14)
 
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
@@ -58,7 +58,13 @@ add_executable(client
         peer_connection_client.cc
 
         mongoose.c
-        mongoose.h SignalingManager.cpp SignalingManager.h)
+        mongoose.h
+
+        SignalingManager.cpp
+        SignalingManager.h
+
+        WebcamStreamerConductor.cpp
+        WebcamStreamerConductor.h)
 
 target_link_libraries(client
         ${GTK3_LIBRARIES}

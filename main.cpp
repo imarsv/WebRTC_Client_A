@@ -21,6 +21,7 @@
 #include "rtc_base/thread.h"
 
 #include "SignalingManager.h"
+#include "WebcamStreamerConductor.h"
 
 class CustomSocketServer : public rtc::PhysicalSocketServer {
 public:
@@ -63,54 +64,72 @@ protected:
 };
 
 int main(int argc, char *argv[]) {
-  gtk_init(&argc, &argv);
+//  gtk_init(&argc, &argv);
+//
+//  rtc::FlagList::SetFlagsFromCommandLine(&argc, argv, true);
+//  if (FLAG_help) {
+//    rtc::FlagList::Print(NULL, false);
+//    return 0;
+//  }
+//
+//  // Abort if the user specifies a port that is outside the allowed
+//  // range [1, 65535].
+//  if ((FLAG_port < 1) || (FLAG_port > 65535)) {
+//    printf("Error: %i is not a valid port.\n", FLAG_port);
+//    return -1;
+//  }
+//
+//  GtkMainWnd wnd(FLAG_server, FLAG_port, FLAG_autoconnect, FLAG_autocall);
+//  wnd.Create();
+//
+//  CustomSocketServer socket_server(&wnd);
+//  rtc::AutoSocketServerThread thread(&socket_server);
+//
+//  rtc::InitializeSSL();
+//  // Must be constructed after we set the socketserver.
+//  PeerConnectionClient client;
+//  rtc::scoped_refptr<Conductor> conductor(new rtc::RefCountedObject<Conductor>(&client, &wnd));
+//  socket_server.set_client(&client);
+//  socket_server.set_conductor(conductor);
+//
+//  thread.Run();
+//
+//  // gtk_main();
+//  wnd.Destroy();
+//
+//  // TODO(henrike): Run the Gtk main loop to tear down the connection.
+//  /*
+//  while (gtk_events_pending()) {
+//    gtk_main_iteration();
+//  }
+//  */
+//  rtc::CleanupSSL();
+
 
   rtc::FlagList::SetFlagsFromCommandLine(&argc, argv, true);
   if (FLAG_help) {
-    rtc::FlagList::Print(NULL, false);
+    rtc::FlagList::Print(nullptr, false);
     return 0;
   }
 
-  // Abort if the user specifies a port that is outside the allowed
-  // range [1, 65535].
-  if ((FLAG_port < 1) || (FLAG_port > 65535)) {
-    printf("Error: %i is not a valid port.\n", FLAG_port);
-    return -1;
-  }
-
-  GtkMainWnd wnd(FLAG_server, FLAG_port, FLAG_autoconnect, FLAG_autocall);
-  wnd.Create();
-
-  CustomSocketServer socket_server(&wnd);
-  rtc::AutoSocketServerThread thread(&socket_server);
-
-//  {
-//    SignalingManager manager;
-//    manager.setURL("wss://localhost:4443/webrtc/xyz");
-//
-//    manager.run();
-//
-//    while(true){};
-//  }
-
   rtc::InitializeSSL();
-  // Must be constructed after we set the socketserver.
-  PeerConnectionClient client;
-  rtc::scoped_refptr<Conductor> conductor(new rtc::RefCountedObject<Conductor>(&client, &wnd));
-  socket_server.set_client(&client);
-  socket_server.set_conductor(conductor);
+  rtc::Thread* thread = rtc::ThreadManager::Instance()->WrapCurrentThread();
+  std::cout << "---------------------------------------------------" << std::endl;
 
-  thread.Run();
+//  auto *streamerConductor = new StreamerConductor(rtc::Thread::Current());
+//  streamerConductor->connect();
 
-  // gtk_main();
-  wnd.Destroy();
+  rtc::scoped_refptr<WebcamStreamerConductor> streamerConductor(new rtc::RefCountedObject<WebcamStreamerConductor>());
+  streamerConductor->connect();
 
-  // TODO(henrike): Run the Gtk main loop to tear down the connection.
-  /*
-  while (gtk_events_pending()) {
-    gtk_main_iteration();
-  }
-  */
+  thread->Run();
+
+
+
+//  delete thread;
   rtc::CleanupSSL();
+
+  std::cout << "===================================================" << std::endl;
+
   return 0;
 }

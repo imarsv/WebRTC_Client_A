@@ -64,7 +64,9 @@ add_executable(client
         SignalingManager.h
 
         WebcamStreamerConductor.cpp
-        WebcamStreamerConductor.h)
+        WebcamStreamerConductor.h
+
+        MediaConstraints.h)
 
 target_link_libraries(client
         ${GTK3_LIBRARIES}

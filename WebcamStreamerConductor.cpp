@@ -13,6 +13,7 @@
 #include <json/json.h>
 
 #include "WebcamStreamerConductor.h"
+#include "MediaConstraints.h"
 
 const auto audioLabel = "audio_label";
 const auto videoLabel = "video_label";
@@ -133,9 +134,18 @@ void WebcamStreamerConductor::addTracks() {
 
   std::unique_ptr<cricket::VideoCapturer> videoCaptureDevice = openVideoCaptureDevice();
   if (videoCaptureDevice) {
+//    webrtc::MediaConstraintsInterface mediaConstraints;
+    MediaConstraints constraints;
+    constraints.SetMandatoryMinWidth(720);
+
+    constraints.AddOptional(webrtc::MediaConstraintsInterface::kMinFrameRate, 30);
+    constraints.AddOptional(webrtc::MediaConstraintsInterface::kMaxFrameRate, 60);
+//    constraints.AddMandatory(webrtc::MediaConstraintsInterface::kMaxWidth, 1280);
+//    constraints.AddMandatory(webrtc::MediaConstraintsInterface::kMaxHeight, 720);
+
     rtc::scoped_refptr<webrtc::VideoTrackInterface> videoTrack(
         peerConnectionFactory->CreateVideoTrack(
-            videoLabel, peerConnectionFactory->CreateVideoSource(std::move(videoCaptureDevice), nullptr)));
+            videoLabel, peerConnectionFactory->CreateVideoSource(std::move(videoCaptureDevice), &constraints)));
 
     resultOrError = peerConnection->AddTrack(videoTrack, {streamId});
     if (!resultOrError.ok()) {
@@ -177,6 +187,10 @@ std::unique_ptr<cricket::VideoCapturer> WebcamStreamerConductor::openVideoCaptur
     if (capturer) {
       break;
     }
+  }
+
+  for (const auto &format : *capturer->GetSupportedFormats()) {
+    std::cout << format.ToString() << std::endl;
   }
 
   return capturer;

@@ -113,14 +113,20 @@ int main(int argc, char *argv[]) {
   }
 
   rtc::InitializeSSL();
-  rtc::Thread* thread = rtc::ThreadManager::Instance()->WrapCurrentThread();
+  rtc::Thread *thread = rtc::ThreadManager::Instance()->WrapCurrentThread();
   std::cout << "---------------------------------------------------" << std::endl;
 
 //  auto *streamerConductor = new StreamerConductor(rtc::Thread::Current());
 //  streamerConductor->connect();
 
-  rtc::scoped_refptr<WebcamStreamerConductor> streamerConductor(new rtc::RefCountedObject<WebcamStreamerConductor>());
+  SignalingManager signalingManager;
+  signalingManager.setURL("wss://localhost:4443/webrtc/xyz");
+  signalingManager.run();
+
+  rtc::scoped_refptr<WebcamStreamerConductor> streamerConductor(
+      new rtc::RefCountedObject<WebcamStreamerConductor>(&signalingManager));
   streamerConductor->connect();
+
 
   thread->Run();
 

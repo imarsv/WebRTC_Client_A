@@ -8,10 +8,14 @@
 
 #include <rtc_base/scoped_ref_ptr.h>
 #include <api/peerconnectioninterface.h>
+#include "SignalingManager.h"
 
 class WebcamStreamerConductor : public webrtc::PeerConnectionObserver,
-                                public webrtc::CreateSessionDescriptionObserver {
+                                public webrtc::CreateSessionDescriptionObserver,
+                                public PeerConnectionObserver {
 public:
+  WebcamStreamerConductor(SignalingManager *signalingManager);
+
   void connect();
 
   //
@@ -36,6 +40,8 @@ public:
 
   void OnFailure(webrtc::RTCError error) override;
 
+  void OnMessage(const std::string &message) override;
+
 private:
   bool initializePeerConnection();
 
@@ -50,6 +56,8 @@ private:
 
   rtc::scoped_refptr<webrtc::PeerConnectionInterface> peerConnection;
   rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> peerConnectionFactory;
+
+  SignalingManager *signalingManager;
 };
 
 

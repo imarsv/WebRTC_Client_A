@@ -10,12 +10,35 @@
 #include <media/engine/webrtcvideocapturerfactory.h>
 #include <modules/video_capture/video_capture_factory.h>
 #include <iostream>
+#include <json/json.h>
 
 #include "WebcamStreamerConductor.h"
 
 const auto audioLabel = "audio_label";
 const auto videoLabel = "video_label";
 const auto streamId = "stream_id";
+const auto sessionDescriptionTypeName = "type";
+const auto sessionDescriptionSdpName = "sdp";
+
+class DummySetSessionDescriptionObserver : public webrtc::SetSessionDescriptionObserver {
+public:
+  static DummySetSessionDescriptionObserver *Create() {
+    return new rtc::RefCountedObject<DummySetSessionDescriptionObserver>();
+  }
+
+  virtual void OnSuccess() { RTC_LOG(INFO) << __FUNCTION__; }
+
+  virtual void OnFailure(webrtc::RTCError error) {
+    RTC_LOG(INFO) << __FUNCTION__ << " " << ToString(error.type()) << ": "
+                  << error.message();
+  }
+};
+
+
+WebcamStreamerConductor::WebcamStreamerConductor(SignalingManager *signalingManager) :
+    signalingManager(signalingManager) {
+  this->signalingManager->registerObserver(this);
+}
 
 void WebcamStreamerConductor::connect() {
   RTC_LOG(INFO) << "WebcamStreamerConductor::connect()";
@@ -25,7 +48,10 @@ void WebcamStreamerConductor::connect() {
   }
 
   if (initializePeerConnection()) {
-    peerConnection->CreateOffer(this, webrtc::PeerConnectionInterface::RTCOfferAnswerOptions());
+    webrtc::PeerConnectionInterface::RTCOfferAnswerOptions options = webrtc::PeerConnectionInterface::RTCOfferAnswerOptions();
+    options.offer_to_receive_audio = 0;
+    options.offer_to_receive_video = 0;
+    peerConnection->CreateOffer(this, options);
   } else {
     RTC_LOG(LS_ERROR) << "Failed to initialize PeerConnection";
   }
@@ -156,17 +182,81 @@ std::unique_ptr<cricket::VideoCapturer> WebcamStreamerConductor::openVideoCaptur
   return capturer;
 }
 
+/*
+ * PeerConnectionObserver
+ */
+void WebcamStreamerConductor::OnMessage(const std::string &message) {
+  RTC_LOG(INFO)
+    << "WebcamStreamerConductor::OnMessage(const std::string &message = " << message << ")";
+
+  Json::Reader reader;
+
+  Json::Value jmessage;
+  if (!reader.parse(message, jmessage)) {
+    RTC_LOG(WARNING) << "Received unknown message. " << message;
+    return;
+  }
+
+  if (!jmessage.isMember("type")) {
+    RTC_LOG(WARNING) << "Received unknown message. " << message;
+    return;
+  }
+
+  auto type = jmessage["type"].asString();
+
+  if (type == "on_answer_sdp") {
+    if (!jmessage.isMember("answer_sdp")) {
+      RTC_LOG(WARNING) << "Invalid [ " << type << " ] format (" << message << ")";
+      return;
+    }
+
+    auto sdp = jmessage["answer_sdp"].asString();
+
+    webrtc::SdpParseError error;
+    std::unique_ptr<webrtc::SessionDescriptionInterface> sessionDescription =
+        webrtc::CreateSessionDescription(webrtc::SdpType::kAnswer, sdp, &error);
+
+    if (!sessionDescription) {
+      RTC_LOG(WARNING) << "Can't parse received session description message. "
+                       << "SdpParseError was: " << error.description;
+      return;
+    }
+
+    RTC_LOG(INFO) << " Received session description :" << sdp;
+
+    peerConnection->SetRemoteDescription(DummySetSessionDescriptionObserver::Create(), sessionDescription.release());
+  } else if (type == "on_video_bitrate") {
+    if (!jmessage.isMember("video_bitrate")) {
+      RTC_LOG(WARNING) << "Invalid [ " << type << " ] format (" << message << ")";
+      return;
+    }
+
+    RTC_LOG(INFO) << " Video bitrate: " << jmessage["video_bitrate"].asLargestInt();
+  } else if (type == "on_error") {
+    if (!jmessage.isMember("message")) {
+      RTC_LOG(WARNING) << "Invalid [ " << type << " ] format (" << message << ")";
+      return;
+    }
+
+    RTC_LOG(LS_ERROR) << jmessage["message"];
+  } else {
+    RTC_LOG(INFO) << "Received [ " << type << " ] unprocessed (" << message << ")";
+  }
+}
 
 /*
  * webrtc::PeerConnectionObserver
  */
 void WebcamStreamerConductor::OnSignalingChange(webrtc::PeerConnectionInterface::SignalingState new_state) {
-  RTC_LOG(INFO) << "WebcamStreamerConductor::OnSignalingChange(webrtc::PeerConnectionInterface::SignalingState new_state)";
+  RTC_LOG(INFO)
+    << "WebcamStreamerConductor::OnSignalingChange(webrtc::PeerConnectionInterface::SignalingState new_state = "
+    << new_state << ")";
 
 }
 
 void WebcamStreamerConductor::OnDataChannel(rtc::scoped_refptr<webrtc::DataChannelInterface> data_channel) {
-  RTC_LOG(INFO) << "WebcamStreamerConductor::OnDataChannel(rtc::scoped_refptr<webrtc::DataChannelInterface> data_channel)";
+  RTC_LOG(INFO)
+    << "WebcamStreamerConductor::OnDataChannel(rtc::scoped_refptr<webrtc::DataChannelInterface> data_channel)";
 }
 
 void WebcamStreamerConductor::OnRenegotiationNeeded() {
@@ -175,12 +265,13 @@ void WebcamStreamerConductor::OnRenegotiationNeeded() {
 
 void WebcamStreamerConductor::OnIceConnectionChange(webrtc::PeerConnectionInterface::IceConnectionState new_state) {
   RTC_LOG(INFO)
-      << "WebcamStreamerConductor::OnIceConnectionChange(webrtc::PeerConnectionInterface::IceConnectionState new_state)";
+    << "WebcamStreamerConductor::OnIceConnectionChange(webrtc::PeerConnectionInterface::IceConnectionState new_state = "
+    << new_state << ")";
 }
 
 void WebcamStreamerConductor::OnIceGatheringChange(webrtc::PeerConnectionInterface::IceGatheringState new_state) {
   RTC_LOG(INFO)
-      << "WebcamStreamerConductor::OnIceGatheringChange(webrtc::PeerConnectionInterface::IceGatheringState new_state)";
+    << "WebcamStreamerConductor::OnIceGatheringChange(webrtc::PeerConnectionInterface::IceGatheringState new_state)";
 }
 
 void WebcamStreamerConductor::OnIceCandidate(const webrtc::IceCandidateInterface *candidate) {
@@ -193,11 +284,11 @@ void WebcamStreamerConductor::OnIceCandidate(const webrtc::IceCandidateInterface
 void WebcamStreamerConductor::OnSuccess(webrtc::SessionDescriptionInterface *desc) {
   RTC_LOG(INFO) << "WebcamStreamerConductor::OnSuccess(webrtc::SessionDescriptionInterface *desc)";
 
-//  peerConnection->SetLocalDescription(DummySetSessionDescriptionObserver::Create(), desc);
-//
-//  std::string sdp;
-//  desc->ToString(&sdp);
-//
+  peerConnection->SetLocalDescription(DummySetSessionDescriptionObserver::Create(), desc);
+
+  std::string sdp;
+  desc->ToString(&sdp);
+
 //  // For loopback test. To save some connecting delay.
 //  if (loopback_) {
 //    // Replace message type from "offer" to "answer"
@@ -208,17 +299,25 @@ void WebcamStreamerConductor::OnSuccess(webrtc::SessionDescriptionInterface *des
 //        session_description.release());
 //    return;
 //  }
-//
-//  Json::StyledWriter writer;
-//  Json::Value jmessage;
-//  jmessage[kSessionDescriptionTypeName] = webrtc::SdpTypeToString(desc->GetType());
-//  jmessage[kSessionDescriptionSdpName] = sdp;
-//
-//  std::cout << "--------------------------------------------------" << std::endl
-//            << jmessage << std::endl
-//            << "--------------------------------------------------" << std::endl;
-//
-//  SendMessage(writer.write(jmessage));
+
+  RTC_LOG(INFO) << " SDP Offer :" << sdp;
+
+  Json::StyledWriter writer;
+  {
+    Json::Value jmessage;
+    jmessage["type"] = "video_bitrate";
+    jmessage["video_bitrate"] = 5000000;
+
+    signalingManager->send(writer.write(jmessage));
+  }
+
+  {
+    Json::Value jmessage;
+    jmessage["type"] = "offer_sdp";
+    jmessage["offer_sdp"] = sdp;
+
+    signalingManager->send(writer.write(jmessage));
+  }
 }
 
 void WebcamStreamerConductor::OnFailure(webrtc::RTCError error) {

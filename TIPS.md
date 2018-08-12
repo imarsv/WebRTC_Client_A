@@ -21,6 +21,11 @@ gn gen out/Default --args='is_clang=false treat_warnings_as_errors=false rtc_inc
 `
 
 `
+gn gen out/Default --args='is_clang=false treat_warnings_as_errors=false rtc_include_tests=false use_custom_libcxx=false use_custom_libcxx_for_host=false use_ozone=true rtc_include_pulse_audio=false use_rtti=true enable_iterator_debugging=false proprietary_codecs=true'
+`
+ 
+
+`
 ninja -C out/Default
 `
 

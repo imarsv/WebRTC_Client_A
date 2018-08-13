@@ -66,7 +66,12 @@ add_executable(client
         WebcamStreamerConductor.cpp
         WebcamStreamerConductor.h
 
-        MediaConstraints.h)
+        MediaConstraints.h
+
+        YuvVideoCapturer.h
+
+        YuvFrameGenerator.cpp
+        YuvFrameGenerator.h)
 
 target_link_libraries(client
         ${GTK3_LIBRARIES}

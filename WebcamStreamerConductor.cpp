@@ -134,11 +134,10 @@ void WebcamStreamerConductor::addTracks() {
 
   std::unique_ptr<cricket::VideoCapturer> videoCaptureDevice = openVideoCaptureDevice();
   if (videoCaptureDevice) {
-//    webrtc::MediaConstraintsInterface mediaConstraints;
     MediaConstraints constraints;
-    constraints.SetMandatoryMinWidth(720);
+//    constraints.SetMandatoryMinWidth(720);
 
-    constraints.AddOptional(webrtc::MediaConstraintsInterface::kMinFrameRate, 30);
+    constraints.AddOptional(webrtc::MediaConstraintsInterface::kMinFrameRate, 25);
     constraints.AddOptional(webrtc::MediaConstraintsInterface::kMaxFrameRate, 60);
 //    constraints.AddMandatory(webrtc::MediaConstraintsInterface::kMaxWidth, 1280);
 //    constraints.AddMandatory(webrtc::MediaConstraintsInterface::kMaxHeight, 720);

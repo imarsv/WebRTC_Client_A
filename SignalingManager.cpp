@@ -116,6 +116,10 @@ void SignalingManager::requestHandler(struct mg_connection *nc, int ev, void *ev
       auto *manager = reinterpret_cast<SignalingManager *>(nc->user_data);
       auto message = std::string(reinterpret_cast<const char *>(wm->data), wm->size);
 
+      if (wm->flags & WEBSOCKET_OP_PONG) {
+        break;
+      }
+
       std::cout << "MG_EV_WEBSOCKET_CONTROL_FRAME [ " << wm->size << " bytes]" << std::endl;
       std::cout << "Message:" << message << std::endl;
       std::cout << "Flags: " << std::hex << wm->flags << std::endl;
@@ -132,6 +136,7 @@ void SignalingManager::requestHandler(struct mg_connection *nc, int ev, void *ev
       std::cout << "MG_F_WEBSOCKET_NO_DEFRAG: " << ((wm->flags & MG_F_WEBSOCKET_NO_DEFRAG) > 0) << std::endl;
       std::cout << "MG_F_DELETE_CHUNK: " << ((wm->flags & MG_F_DELETE_CHUNK) > 0) << std::endl;
       std::cout << "MG_F_ENABLE_BROADCAST: " << ((wm->flags & MG_F_ENABLE_BROADCAST) > 0) << std::endl;
+      std::cout << "WEBSOCKET_OP_PONG: " << ((wm->flags & WEBSOCKET_OP_PONG) > 0) << std::endl;
     }
       break;
 

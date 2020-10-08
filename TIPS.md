@@ -21,9 +21,16 @@ gn gen out/Default --args='is_clang=false treat_warnings_as_errors=false rtc_inc
 `
 
 `
-gn gen out/Default --args='is_clang=false treat_warnings_as_errors=false rtc_include_tests=false use_custom_libcxx=false use_custom_libcxx_for_host=false use_ozone=true rtc_include_pulse_audio=false use_rtti=true enable_iterator_debugging=false proprietary_codecs=true'
+gn gen out/Default --args='is_clang=false treat_warnings_as_errors=false rtc_include_tests=false use_custom_libcxx=false use_custom_libcxx_for_host=false use_ozone=true rtc_include_pulse_audio=false use_rtti=true enable_iterator_debugging=false proprietary_codecs=true rtc_use_h264=true ffmpeg_branding="Chrome"'
 `
- 
+
+`
+gn gen out/Default --args='is_clang=false treat_warnings_as_errors=false rtc_include_tests=false use_custom_libcxx=false use_custom_libcxx_for_host=false use_ozone=true rtc_include_pulse_audio=false use_rtti=true enable_iterator_debugging=false proprietary_codecs=true rtc_build_ssl=false'
+gn gen out/Default --args='is_clang=false treat_warnings_as_errors=false rtc_include_tests=false use_custom_libcxx=false use_custom_libcxx_for_host=false use_ozone=true rtc_include_pulse_audio=false use_rtti=true enable_iterator_debugging=false proprietary_codecs=true rtc_build_ssl=false rtc_ssl_root="/usr/include/openssl"'
+
+
+gn gen out/Default --args='is_clang=false treat_warnings_as_errors=false rtc_include_tests=false use_custom_libcxx=false use_custom_libcxx_for_host=false use_ozone=true rtc_include_pulse_audio=false use_rtti=true enable_iterator_debugging=false proprietary_codecs=true rtc_build_ssl=false rtc_ssl_root="/usr/include/openssl"'
+`
 
 `
 ninja -C out/Default

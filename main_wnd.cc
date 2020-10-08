@@ -18,10 +18,11 @@
 #include "defaults.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/stringutils.h"
+#include "rtc_base/string_utils.h"
 #include "third_party/libyuv/include/libyuv/convert_from.h"
-
-using rtc::sprintfn;
+#include "third_party/libyuv/include/libyuv/convert.h"
+#include "third_party/libyuv/include/libyuv/convert_from.h"
+#include <cstdio>
 
 namespace {
 
@@ -151,7 +152,7 @@ GtkMainWnd::GtkMainWnd(const char *server,
       autoconnect_(autoconnect),
       autocall_(autocall) {
   char buffer[10];
-  sprintfn(buffer, sizeof(buffer), "%i", port);
+  snprintf(buffer, sizeof(buffer), "%i", port);
   port_ = buffer;
 }
 
@@ -544,13 +545,14 @@ void GtkMainWnd::VideoRenderer::OnFrame(const webrtc::VideoFrame &video_frame) {
   }
   SetSize(buffer->width(), buffer->height());
 
-  // The order in the name of libyuv::I420To(ABGR,RGBA) is ambiguous because
-  // it doesn't tell you if it is referring to how it is laid out in memory as
-  // bytes or if endiannes is taken into account.
-  // This was supposed to be a call to libyuv::I420ToRGBA but it was resulting
-  // in a reddish video output (see https://bugs.webrtc.org/6857) because it
-  // was producing an unexpected byte order (ABGR, byte swapped).
-  libyuv::I420ToABGR(buffer->DataY(), buffer->StrideY(), buffer->DataU(),
+  // TODO(bugs.webrtc.org/6857): This conversion is correct for little-endian
+  // only. Cairo ARGB32 treats pixels as 32-bit values in *native* byte order,
+  // with B in the least significant byte of the 32-bit value. Which on
+  // little-endian means that memory layout is BGRA, with the B byte stored at
+  // lowest address. Libyuv's ARGB format (surprisingly?) uses the same
+  // little-endian format, with B in the first byte in memory, regardless of
+  // native endianness.
+  libyuv::I420ToARGB(buffer->DataY(), buffer->StrideY(), buffer->DataU(),
                      buffer->StrideU(), buffer->DataV(), buffer->StrideV(),
                      image_.get(), width_ * 4, buffer->width(),
                      buffer->height());

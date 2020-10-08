@@ -7,10 +7,12 @@
 #include <api/video_codecs/builtin_video_encoder_factory.h>
 #include <api/video_codecs/builtin_video_decoder_factory.h>
 #include <modules/video_capture/video_capture.h>
-#include <media/engine/webrtcvideocapturerfactory.h>
+#include "api/create_peerconnection_factory.h"
 #include <modules/video_capture/video_capture_factory.h>
 #include <iostream>
 #include <json/json.h>
+#include "pc/video_track_source.h"
+#include "test/vcm_capturer.h"
 
 #include "WebcamStreamerConductor.h"
 #include "MediaConstraints.h"
@@ -20,6 +22,43 @@ const auto videoLabel = "video_label";
 const auto streamId = "stream_id";
 const auto sessionDescriptionTypeName = "type";
 const auto sessionDescriptionSdpName = "sdp";
+
+class WebcamCapturerTrackSource : public webrtc::VideoTrackSource {
+public:
+  static rtc::scoped_refptr<WebcamCapturerTrackSource> Create() {
+    const size_t kWidth = 1280;
+    const size_t kHeight = 720;
+    const size_t kFps = 30;
+    std::unique_ptr<webrtc::test::VcmCapturer> capturer;
+    std::unique_ptr<webrtc::VideoCaptureModule::DeviceInfo> info(
+        webrtc::VideoCaptureFactory::CreateDeviceInfo());
+    if (!info) {
+      return nullptr;
+    }
+    int num_devices = info->NumberOfDevices();
+    for (int i = 0; i < num_devices; ++i) {
+      capturer = std::unique_ptr<webrtc::test::VcmCapturer>(webrtc::test::VcmCapturer::Create(kWidth, kHeight, kFps, i));
+      if (capturer) {
+        return new rtc::RefCountedObject<WebcamCapturerTrackSource>(
+            std::move(capturer));
+      }
+    }
+
+    return nullptr;
+  }
+
+protected:
+  explicit WebcamCapturerTrackSource(
+      std::unique_ptr<webrtc::test::VcmCapturer> capturer)
+      : VideoTrackSource(/*remote=*/false), capturer_(std::move(capturer)) {}
+
+private:
+  rtc::VideoSourceInterface<webrtc::VideoFrame>* source() override {
+    return capturer_.get();
+  }
+  std::unique_ptr<webrtc::test::VcmCapturer> capturer_;
+};
+
 
 class DummySetSessionDescriptionObserver : public webrtc::SetSessionDescriptionObserver {
 public:
@@ -99,6 +138,8 @@ bool WebcamStreamerConductor::createPeerConnection(bool dtls) {
   config.sdp_semantics = webrtc::SdpSemantics::kUnifiedPlan;
   config.enable_dtls_srtp = dtls;
 
+//  config.set_experiment_cpu_load_estimator(true);
+
 //  webrtc::PeerConnectionInterface::IceServer server;
 //  server.uri = GetPeerConnectionString();
 //  config.servers.push_back(server);
@@ -123,8 +164,7 @@ void WebcamStreamerConductor::addTracks() {
   }
 
   rtc::scoped_refptr<webrtc::AudioTrackInterface> audioTrack(
-      peerConnectionFactory->CreateAudioTrack(
-          audioLabel, peerConnectionFactory->CreateAudioSource(cricket::AudioOptions())));
+      peerConnectionFactory->CreateAudioTrack(audioLabel, peerConnectionFactory->CreateAudioSource(cricket::AudioOptions())));
 
   auto resultOrError = peerConnection->AddTrack(audioTrack, {streamId});
   if (!resultOrError.ok()) {
@@ -132,75 +172,27 @@ void WebcamStreamerConductor::addTracks() {
                       << resultOrError.error().message();
   }
 
-  std::unique_ptr<cricket::VideoCapturer> videoCaptureDevice = openVideoCaptureDevice();
-  if (videoCaptureDevice) {
-    MediaConstraints constraints;
-//    constraints.SetMandatoryMinWidth(720);
+  rtc::scoped_refptr<WebcamCapturerTrackSource> video_device = WebcamCapturerTrackSource::Create();
+  if (video_device) {
+    rtc::scoped_refptr<webrtc::VideoTrackInterface> video_track_(peerConnectionFactory->CreateVideoTrack(videoLabel, video_device));
+//    main_wnd_->StartLocalRenderer(video_track_);
 
-    constraints.AddOptional(webrtc::MediaConstraintsInterface::kMinFrameRate, 25);
-    constraints.AddOptional(webrtc::MediaConstraintsInterface::kMaxFrameRate, 60);
-//    constraints.AddMandatory(webrtc::MediaConstraintsInterface::kMaxWidth, 1280);
-//    constraints.AddMandatory(webrtc::MediaConstraintsInterface::kMaxHeight, 720);
-
-    rtc::scoped_refptr<webrtc::VideoTrackInterface> videoTrack(
-        peerConnectionFactory->CreateVideoTrack(
-            videoLabel, peerConnectionFactory->CreateVideoSource(std::move(videoCaptureDevice), &constraints)));
-
-    resultOrError = peerConnection->AddTrack(videoTrack, {streamId});
+    resultOrError = peerConnection->AddTrack(video_track_, {streamId});
     if (!resultOrError.ok()) {
       RTC_LOG(LS_ERROR) << "Failed to add video track to PeerConnection: "
                         << resultOrError.error().message();
     }
   } else {
-    RTC_LOG(LS_ERROR) << "openVideoCaptureDevice failed";
+    RTC_LOG(LS_ERROR) << "OpenVideoCaptureDevice failed";
   }
-}
-
-std::unique_ptr<cricket::VideoCapturer> WebcamStreamerConductor::openVideoCaptureDevice() {
-  RTC_LOG(INFO) << "WebcamStreamerConductor::openVideoCaptureDevice()";
-
-  std::vector<std::string> device_names;
-
-  {
-    std::unique_ptr<webrtc::VideoCaptureModule::DeviceInfo> info(webrtc::VideoCaptureFactory::CreateDeviceInfo());
-    if (!info) {
-      return nullptr;
-    }
-
-    int num_devices = info->NumberOfDevices();
-    for (int i = 0; i < num_devices; ++i) {
-      const uint32_t kSize = 256;
-      char name[kSize] = {0};
-      char id[kSize] = {0};
-
-      if (info->GetDeviceName(i, name, kSize, id, kSize) != -1) {
-        device_names.push_back(name);
-      }
-    }
-  }
-
-  cricket::WebRtcVideoDeviceCapturerFactory factory;
-  std::unique_ptr<cricket::VideoCapturer> capturer;
-  for (const auto &name : device_names) {
-    capturer = factory.Create(cricket::Device(name, 0));
-    if (capturer) {
-      break;
-    }
-  }
-
-  for (const auto &format : *capturer->GetSupportedFormats()) {
-    std::cout << format.ToString() << std::endl;
-  }
-
-  return capturer;
 }
 
 /*
  * PeerConnectionObserver
  */
 void WebcamStreamerConductor::OnMessage(const std::string &message) {
-  RTC_LOG(INFO)
-    << "WebcamStreamerConductor::OnMessage(const std::string &message = " << message << ")";
+//  RTC_LOG(INFO)
+//    << "WebcamStreamerConductor::OnMessage(const std::string &message = " << message << ")";
 
   Json::Reader reader;
 
@@ -252,6 +244,8 @@ void WebcamStreamerConductor::OnMessage(const std::string &message) {
     }
 
     RTC_LOG(LS_ERROR) << jmessage["message"];
+  } else if (type == "on_media_receive") {
+    RTC_LOG(INFO) << "Server media: " << message;
   } else {
     RTC_LOG(INFO) << "Received [ " << type << " ] unprocessed (" << message << ")";
   }
@@ -319,7 +313,7 @@ void WebcamStreamerConductor::OnSuccess(webrtc::SessionDescriptionInterface *des
   {
     Json::Value jmessage;
     jmessage["type"] = "video_bitrate";
-    jmessage["video_bitrate"] = 5000000;
+    jmessage["video_bitrate"] = 2000000;
 
     signalingManager->send(writer.write(jmessage));
   }

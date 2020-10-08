@@ -17,11 +17,15 @@
 #include "main_wnd.h"
 #include "peer_connection_client.h"
 
-#include "rtc_base/ssladapter.h"
+#include "rtc_base/ssl_adapter.h"
 #include "rtc_base/thread.h"
 
 #include "SignalingManager.h"
 #include "WebcamStreamerConductor.h"
+
+#include "absl/flags/flag.h"
+#include "absl/flags/parse.h"
+#include "absl/flags/usage.h"
 
 class CustomSocketServer : public rtc::PhysicalSocketServer {
 public:
@@ -30,7 +34,7 @@ public:
 
   virtual ~CustomSocketServer() {}
 
-  void SetMessageQueue(rtc::MessageQueue *queue) override {
+  void SetMessageQueue(rtc::Thread *queue) override {
     message_queue_ = queue;
   }
 
@@ -57,7 +61,7 @@ public:
   }
 
 protected:
-  rtc::MessageQueue *message_queue_;
+  rtc::Thread *message_queue_;
   GtkMainWnd *wnd_;
   Conductor *conductor_;
   PeerConnectionClient *client_;
@@ -106,11 +110,7 @@ int main(int argc, char *argv[]) {
 //  rtc::CleanupSSL();
 
 
-  rtc::FlagList::SetFlagsFromCommandLine(&argc, argv, true);
-  if (FLAG_help) {
-    rtc::FlagList::Print(nullptr, false);
-    return 0;
-  }
+//  absl::ParseCommandLine(argc, argv);
 
   rtc::InitializeSSL();
   rtc::Thread *thread = rtc::ThreadManager::Instance()->WrapCurrentThread();
@@ -120,7 +120,8 @@ int main(int argc, char *argv[]) {
 //  streamerConductor->connect();
 
   SignalingManager signalingManager;
-  signalingManager.setURL("wss://localhost:4443/webrtc/xyz");
+//  signalingManager.setURL("wss://localhost:4443/webrtc/xyz");
+  signalingManager.setURL("wss://beta.live.ceeblue.tv:4433/webrtc/as+42ce8fdb-49fe-4811-99f2-1d68d6a945cc");
   signalingManager.run();
 
   rtc::scoped_refptr<WebcamStreamerConductor> streamerConductor(

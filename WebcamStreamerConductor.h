@@ -6,8 +6,8 @@
 #define WEBRTC_CLIENT_1_WEBCAMSTREAMERCONDUCTOR_H
 
 
-#include <rtc_base/scoped_ref_ptr.h>
-#include <api/peerconnectioninterface.h>
+#include <api/scoped_refptr.h>
+#include <api/peer_connection_interface.h>
 #include "SignalingManager.h"
 
 class WebcamStreamerConductor : public webrtc::PeerConnectionObserver,

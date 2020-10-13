@@ -37,7 +37,7 @@ namespace {
 }  // namespace
 
 PeerConnectionClient::PeerConnectionClient()
-    : callback_(NULL), resolver_(NULL), state_(NOT_CONNECTED), my_id_(-1) {}
+    : MessageHandler(false), callback_(NULL), resolver_(NULL), state_(NOT_CONNECTED), my_id_(-1) {}
 
 PeerConnectionClient::~PeerConnectionClient() {}
 
